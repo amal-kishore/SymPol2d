@@ -1,0 +1,159 @@
+
+Analyzing: WS2 (1WS2-1)
+Layer group: p-6m2
+Number of atoms: 3
+Auto-estimated interlayer distance: 3.10 Å
+
+Scanning 30x30 grid for stacking configurations...
+
+============================================================
+STACKING CONFIGURATIONS FOUND:
+============================================================
+
+AA stacking (non-polar):
+  τ = [0.0000, 0.0000], d = 3.10 Å
+  Preserved symmetries: E, C6, C3, C2, C3^2, C6^5, Mx, My, Mxy
+
+X-POLARIZED PAIRS (28 found):
+
+  Pair 1:
+    AB: τ = [0.0000, 0.0333]
+    BA: τ = [0.0000, 0.9667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 2:
+    AB: τ = [0.0000, 0.0667]
+    BA: τ = [0.0000, 0.9333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 3:
+    AB: τ = [0.0000, 0.1000]
+    BA: τ = [0.0000, 0.9000]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 4:
+    AB: τ = [0.0000, 0.1333]
+    BA: τ = [0.0000, 0.8667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 5:
+    AB: τ = [0.0000, 0.1667]
+    BA: τ = [0.0000, 0.8333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 6:
+    AB: τ = [0.0000, 0.2000]
+    BA: τ = [0.0000, 0.8000]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 7:
+    AB: τ = [0.0000, 0.2333]
+    BA: τ = [0.0000, 0.7667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 8:
+    AB: τ = [0.0000, 0.2667]
+    BA: τ = [0.0000, 0.7333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 9:
+    AB: τ = [0.0000, 0.3000]
+    BA: τ = [0.0000, 0.7000]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 10:
+    AB: τ = [0.0000, 0.3333]
+    BA: τ = [0.0000, 0.6667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 11:
+    AB: τ = [0.0000, 0.3667]
+    BA: τ = [0.0000, 0.6333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 12:
+    AB: τ = [0.0000, 0.4000]
+    BA: τ = [0.0000, 0.6000]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 13:
+    AB: τ = [0.0000, 0.4333]
+    BA: τ = [0.0000, 0.5667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 14:
+    AB: τ = [0.0000, 0.4667]
+    BA: τ = [0.0000, 0.5333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 15:
+    AB: τ = [0.5000, 0.0333]
+    BA: τ = [0.5000, 0.9667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 16:
+    AB: τ = [0.5000, 0.0667]
+    BA: τ = [0.5000, 0.9333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 17:
+    AB: τ = [0.5000, 0.1000]
+    BA: τ = [0.5000, 0.9000]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 18:
+    AB: τ = [0.5000, 0.1333]
+    BA: τ = [0.5000, 0.8667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 19:
+    AB: τ = [0.5000, 0.1667]
+    BA: τ = [0.5000, 0.8333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 20:
+    AB: τ = [0.5000, 0.2000]
+    BA: τ = [0.5000, 0.8000]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 21:
+    AB: τ = [0.5000, 0.2333]
+    BA: τ = [0.5000, 0.7667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 22:
+    AB: τ = [0.5000, 0.2667]
+    BA: τ = [0.5000, 0.7333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 23:
+    AB: τ = [0.5000, 0.3000]
+    BA: τ = [0.5000, 0.7000]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 24:
+    AB: τ = [0.5000, 0.3333]
+    BA: τ = [0.5000, 0.6667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 25:
+    AB: τ = [0.5000, 0.3667]
+    BA: τ = [0.5000, 0.6333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 26:
+    AB: τ = [0.5000, 0.4000]
+    BA: τ = [0.5000, 0.6000]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 27:
+    AB: τ = [0.5000, 0.4333]
+    BA: τ = [0.5000, 0.5667]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+  Pair 28:
+    AB: τ = [0.5000, 0.4667]
+    BA: τ = [0.5000, 0.5333]
+    Broken symmetries: E, C6, C3, C3^2, C6^5, Mx, Mxy
+
+Results saved to: example/WS2/WS2_x_polar.json

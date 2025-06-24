@@ -1,0 +1,71 @@
+
+Analyzing: WS2 (1WS2-1)
+Layer group: p-6m2
+Number of atoms: 3
+Auto-estimated interlayer distance: 3.10 Å
+
+Scanning 30x30 grid for stacking configurations...
+
+============================================================
+STACKING CONFIGURATIONS FOUND:
+============================================================
+
+AA stacking (non-polar):
+  τ = [0.0000, 0.0000], d = 3.10 Å
+  Preserved symmetries: E, C6, C3, C2, C3^2, C6^5, Mx, My, Mxy
+
+X-POLARIZED PAIRS (28 found):
+
+  Pair 1:
+    AB: τ = [0.0000, 0.0333]
+    BA: τ = [0.0000, 0.9667]
+    Broken symmetries: E, C6, C3...
+
+  Pair 2:
+    AB: τ = [0.0000, 0.0667]
+    BA: τ = [0.0000, 0.9333]
+    Broken symmetries: E, C6, C3...
+
+  Pair 3:
+    AB: τ = [0.0000, 0.1000]
+    BA: τ = [0.0000, 0.9000]
+    Broken symmetries: E, C6, C3...
+  ... and 25 more x-polarized pairs
+
+Y-POLARIZED PAIRS (28 found):
+
+  Pair 1:
+    AB: τ = [0.0333, 0.0000]
+    BA: τ = [0.9667, 0.0000]
+    Broken symmetries: E, C6, C3...
+
+  Pair 2:
+    AB: τ = [0.0333, 0.5000]
+    BA: τ = [0.9667, 0.5000]
+    Broken symmetries: E, C6, C3...
+
+  Pair 3:
+    AB: τ = [0.0667, 0.0000]
+    BA: τ = [0.9333, 0.0000]
+    Broken symmetries: E, C6, C3...
+  ... and 25 more y-polarized pairs
+
+Z-POLARIZED PAIRS (392 found):
+
+  Pair 1:
+    AB: τ = [0.0333, 0.0333]
+    BA: τ = [0.9667, 0.9667]
+    Broken symmetries: E, C6, C3...
+
+  Pair 2:
+    AB: τ = [0.0333, 0.0667]
+    BA: τ = [0.9667, 0.9333]
+    Broken symmetries: E, C6, C3...
+
+  Pair 3:
+    AB: τ = [0.0333, 0.1000]
+    BA: τ = [0.9667, 0.9000]
+    Broken symmetries: E, C6, C3...
+  ... and 389 more z-polarized pairs
+
+Results saved to: example/WS2/WS2_all_stackings.json
