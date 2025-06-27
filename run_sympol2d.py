@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Runner script for 2dSYMPOL
+Runner script for SYMPOL2D
 """
 
 import sys

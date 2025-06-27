@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Command-line interface for 2dSYMPOL
+Command-line interface for SYMPOL2D
 """
 
 import argparse
@@ -13,13 +13,32 @@ from .c2db_interface import C2DBInterface
 from .scanner import StackingScanner
 from .symmetry import LayerGroupSymmetry
 from .utils import estimate_interlayer_distance
+from .cif_writer import save_all_stackings_cif
 
 
 def search_material(args):
     """Search for polar stackings of a specific material"""
     
+    # Check if database exists
+    db_path = Path(args.database)
+    if not db_path.exists():
+        print(f"❌ Error: Database file '{args.database}' not found!")
+        print("\nSuggestions:")
+        print("  1. Check if the database path is correct")
+        print("  2. Download the C2DB database from: https://cmr.fysik.dtu.dk/c2db/c2db.html")
+        print("  3. Use --database option to specify the correct path")
+        print(f"  4. For the example, the database is in: example/c2db.db")
+        return 1
+    
+    print(f"✅ Database found: {args.database}")
+    
     # Connect to c2db
-    db = C2DBInterface(args.database)
+    try:
+        db = C2DBInterface(args.database)
+    except Exception as e:
+        print(f"❌ Error connecting to database: {e}")
+        print("\nThe database file may be corrupted or in an unsupported format.")
+        return 1
     
     # Get material
     if args.uid:
@@ -134,41 +153,86 @@ def search_material(args):
     
     # Save results if requested
     if args.output:
-        output_data = {
-            'material': {
-                'uid': material.uid,
-                'formula': material.formula,
-                'layer_group': material.layer_group
-            },
-            'grid_size': args.grid,
-            'stackings': {}
-        }
-        
-        for name, config in representatives.items():
-            output_data['stackings'][name] = {
-                'tau': config.tau.tolist(),
-                'preserved_symmetries': config.preserved_symmetries,
-                'broken_symmetries': config.broken_symmetries
-            }
-        
         output_path = Path(args.output)
-        if output_path.suffix == '.json':
-            with open(output_path, 'w') as f:
-                json.dump(output_data, f, indent=2)
-        else:
-            # Default to JSON with .json extension
-            output_path = output_path.with_suffix('.json')
-            with open(output_path, 'w') as f:
-                json.dump(output_data, f, indent=2)
         
-        print(f"\nResults saved to: {output_path}")
+        # Determine output format
+        if args.output_format == 'json' or output_path.suffix == '.json':
+            # Save as JSON
+            output_data = {
+                'material': {
+                    'uid': material.uid,
+                    'formula': material.formula,
+                    'layer_group': material.layer_group
+                },
+                'grid_size': args.grid,
+                'stackings': {}
+            }
+            
+            for name, config in representatives.items():
+                output_data['stackings'][name] = {
+                    'tau': config.tau.tolist(),
+                    'preserved_symmetries': config.preserved_symmetries,
+                    'broken_symmetries': config.broken_symmetries,
+                    'polar_direction': config.polar_direction
+                }
+            
+            if output_path.suffix != '.json':
+                output_path = output_path.with_suffix('.json')
+            
+            with open(output_path, 'w') as f:
+                json.dump(output_data, f, indent=2)
+            
+            print(f"\nResults saved to: {output_path}")
+            
+        else:  # Default to CIF format
+            # Create output directory for CIF files
+            if output_path.suffix in ['.cif', '']:
+                # If user specified a .cif file or no extension, use parent as directory
+                output_dir = output_path.parent / output_path.stem
+            else:
+                output_dir = output_path
+            
+            # Save all stackings as CIF files
+            cif_files = save_all_stackings_cif(material, representatives, output_dir)
+            
+            print(f"\nCIF files saved to: {output_dir}/")
+            for cif_file in cif_files:
+                print(f"  - {cif_file.name}")
+    
+    # Also save CIF files by default if no output specified
+    elif representatives:
+        default_dir = Path(f"{material.formula}_stackings")
+        cif_files = save_all_stackings_cif(material, representatives, default_dir)
+        
+        print(f"\nCIF files saved to: {default_dir}/")
+        for cif_file in cif_files:
+            print(f"  - {cif_file.name}")
     
     return 0
 
 
 def list_materials(args):
     """List materials in the database"""
-    db = C2DBInterface(args.database)
+    
+    # Check if database exists
+    db_path = Path(args.database)
+    if not db_path.exists():
+        print(f"❌ Error: Database file '{args.database}' not found!")
+        print("\nSuggestions:")
+        print("  1. Check if the database path is correct")
+        print("  2. Download the C2DB database from: https://cmr.fysik.dtu.dk/c2db/c2db.html")
+        print("  3. Use --database option to specify the correct path")
+        print(f"  4. For the example, the database is in: example/c2db.db")
+        return 1
+    
+    print(f"✅ Database found: {args.database}")
+    
+    try:
+        db = C2DBInterface(args.database)
+    except Exception as e:
+        print(f"❌ Error connecting to database: {e}")
+        print("\nThe database file may be corrupted or in an unsupported format.")
+        return 1
     
     if args.layer_groups:
         # List all layer groups
@@ -201,21 +265,21 @@ def list_materials(args):
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description='2dSYMPOL: SYMmetry-based prediction of POLarity in 2D bilayers',
+        description='SYMPOL2D: SYMmetry-based prediction of POLarity in 2D bilayers',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Search by material UID
-  2dsympol search --uid MoS2-165798ab5e18 --grid 50
+  sympol2d search --uid MoS2-165798ab5e18 --grid 50
   
   # Search by formula
-  2dsympol search --formula MoS2 --grid 50 --auto-select
+  sympol2d search --formula MoS2 --grid 50 --auto-select
   
   # List materials
-  2dsympol list --formula WS2
+  sympol2d list --formula WS2
   
   # List layer groups
-  2dsympol list --layer-groups
+  sympol2d list --layer-groups
         """
     )
     
@@ -234,7 +298,10 @@ Examples:
     search_parser.add_argument('--grid', '-g', type=int, default=50,
                               help='Grid size for scanning (default: 50)')
     search_parser.add_argument('--output', '-o', type=str,
-                              help='Output file for results (JSON format)')
+                              help='Output path (directory for CIF, file for JSON)')
+    search_parser.add_argument('--output-format', '-of', type=str,
+                              choices=['cif', 'json'], default='cif',
+                              help='Output format (default: cif)')
     search_parser.add_argument('--auto-select', action='store_true',
                               help='Auto-select first match when multiple found')
     search_parser.add_argument('--polar-direction', '-pd', type=str,

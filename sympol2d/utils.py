@@ -1,5 +1,5 @@
 """
-Utility functions for 2dSYMPOL
+Utility functions for SYMPOL2D
 """
 
 import numpy as np

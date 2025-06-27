@@ -1,5 +1,5 @@
 """
-Core symmetry analysis module for 2dSYMPOL
+Core symmetry analysis module for SYMPOL2D
 """
 
 import numpy as np

@@ -1,6 +1,6 @@
 # WS2 Bilayer Analysis Example
 
-This directory contains a comprehensive example of using 2dSYMPOL to analyze WS2 bilayer stacking configurations.
+This directory contains a comprehensive example of using SYMPOL2D to analyze WS2 bilayer stacking configurations.
 
 ## Material Information
 
@@ -67,19 +67,28 @@ WS2 has p-6m2 layer group symmetry with operations:
 
 ## Usage Examples
 
-### Basic Analysis
+### Basic Analysis (with example database)
 ```bash
-python3 run_2dsympol.py search --uid 1WS2-1 --grid 30
+# From the main directory
+python3 run_sympol2d.py --database example/c2db.db search --uid 1WS2-1 --grid 30
+
+# Or using the installed command
+sympol2d --database example/c2db.db search --uid 1WS2-1 --grid 30
 ```
 
 ### Filter by Polarization
 ```bash
-python3 run_2dsympol.py search --uid 1WS2-1 --polar-direction z
+python3 run_sympol2d.py --database example/c2db.db search --uid 1WS2-1 --polar-direction z
 ```
 
 ### Custom Interlayer Distance
 ```bash
-python3 run_2dsympol.py search --uid 1WS2-1 --interlayer-distance 3.5
+python3 run_sympol2d.py --database example/c2db.db search --uid 1WS2-1 --interlayer-distance 3.5
+```
+
+### Save as JSON instead of CIF
+```bash
+python3 run_sympol2d.py --database example/c2db.db search --uid 1WS2-1 --output-format json --output WS2_results.json
 ```
 
 ## Physical Interpretation
