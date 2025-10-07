@@ -7,83 +7,172 @@ from typing import List, Tuple, Dict, Optional
 from dataclasses import dataclass
 
 
+# 2x2 linear parts of in-plane operations (reduced lattice basis)
+OPER = {
+    'E':  np.array([[ 1,  0],
+                    [ 0,  1]], float),
+
+    'C2': np.array([[-1,  0],
+                    [ 0, -1]], float),  # 180° about z
+
+    'Mx': np.array([[ 1,  0],
+                    [ 0, -1]], float),  # mirror about y-axis (reflects y, x fixed)
+
+    'My': np.array([[-1,  0],
+                    [ 0,  1]], float),  # mirror about x-axis (reflects x, y fixed)
+
+    'C6': np.array([[ 0.5, -np.sqrt(3)/2],
+                    [ np.sqrt(3)/2, 0.5]], float),
+
+    'C3': np.array([[-0.5, -np.sqrt(3)/2],
+                    [ np.sqrt(3)/2, -0.5]], float),
+
+    'C4': np.array([[ 0, -1],
+                    [ 1,  0]], float),
+}
+
+# Minimal layer-group → linear-ops dictionary for our test.
+# Glides/centerings: same linear part as mirrors/rotations; translations are absorbed on RHS.
+LAYER_GROUP_OPERATIONS = {
+    # Rectangular family
+    'p2mm': ['E', 'C2', 'Mx', 'My'],
+    'pman': ['E', 'C2', 'Mx', 'My'],
+    'pmmm': ['E', 'C2', 'Mx', 'My'],
+    'cmmm': ['E', 'C2', 'Mx', 'My'],
+    'pmm2': ['E', 'C2', 'Mx', 'My'],
+    'cmm2': ['E', 'C2', 'Mx', 'My'],
+
+    # Single-axis symmetry
+    'p1': ['E'],
+    'p2': ['E', 'C2'],
+    'pm': ['E', 'My'],
+    'pg': ['E', 'My'],
+    'cm': ['E', 'My'],
+    'p2mg': ['E', 'C2', 'Mx', 'My'],
+    'p2gg': ['E', 'C2'],
+    'c2mm': ['E', 'C2', 'Mx', 'My'],
+
+    # Hexagonal / triangular
+    'p-6m2': ['E', 'C6', 'C3', 'C2', 'Mx', 'My'],
+    'p6mm':  ['E', 'C6', 'C3', 'C2', 'Mx', 'My'],
+    'p3m1':  ['E', 'C3', 'C3', 'Mx', 'My'],
+    'p31m':  ['E', 'C3', 'C3', 'Mx', 'My'],
+    'p3':    ['E', 'C3', 'C3'],
+    'p-3':   ['E', 'C3', 'C3', 'C2'],
+    'p-3m1': ['E', 'C3', 'C3', 'C2', 'Mx', 'My'],
+    'p-31m': ['E', 'C3', 'C3', 'C2', 'Mx', 'My'],
+
+    # Square
+    'p4':     ['E', 'C4', 'C2'],
+    'p4mm':   ['E', 'C4', 'C2', 'Mx', 'My'],
+    'p-4m2':  ['E', 'C4', 'C2', 'Mx', 'My'],
+    'p-4':    ['E', 'C4', 'C2'],
+
+    # Hexagonal rotations only
+    'p6':     ['E', 'C6', 'C3', 'C2'],
+    'p-6':    ['E', 'C6', 'C3', 'C2'],
+}
+
+# Does AB↔BA (tau, 1-tau) predict opposite Pz under *sliding* for this group?
+Z_SIGN_FLIP_EXPECTED = {
+    # Hexagonal: AB↔BA related by inversion → Pz flips
+    'p-6m2': True, 'p6mm': True, 'p3m1': True, 'p31m': True,
+    'p-3m1': True, 'p-31m': True, 'p-6': True, 'p6': True,
+    'p3': True, 'p-3': True,
+
+    # Rectangular: AB↔BA related by C2z (z-even) → Pz does NOT flip
+    'p2mm': False, 'pman': False, 'pmmm': False, 'cmmm': False,
+    'pmm2': False, 'cmm2': False, 'c2mm': False, 'p2mg': False,
+    'p2': False, 'p2gg': False,
+
+    # Square: AB↔BA related by C2z (z-even) → Pz does NOT flip
+    'p4mm': False, 'p-4m2': False, 'p4': False, 'p-4': False,
+
+    # Single mirror: depends on details, default False
+    'pm': False, 'pg': False, 'cm': False,
+    'p1': False,
+}
+
+def mod1(v):
+    """Wrap to [0,1)"""
+    return np.mod(v, 1.0)
+
+def is_integer_vec(x, atol=1e-8):
+    """Check if vector is integer (within tolerance)"""
+    return np.all(np.abs(x - np.rint(x)) <= atol)
+
+def survives(R, tau, atol=1e-8):
+    """
+    Test if operation R survives at stacking vector tau.
+    Condition: (E + R)τ ∈ Z²
+    """
+    M = OPER[R]
+    lhs = (np.eye(2) + M) @ tau
+    return is_integer_vec(lhs, atol=atol)
+
+def classify_z_allowed(survivors):
+    """
+    Classify if z-polarization is allowed based on surviving symmetries.
+
+    Returns:
+        (bool, str): (is_allowed, classification)
+        - "z-only": C2 survives, both Mx and My broken (strong z-polar class)
+        - "z-allowed": Pz not forbidden by surviving in-plane ops
+    """
+    ops = set(survivors)
+    mx, my, c2 = ('Mx' in ops), ('My' in ops), ('C2' in ops)
+
+    if c2 and (not mx) and (not my):
+        return True, "z-only"
+    return True, "z-allowed"
+
+
+# Legacy compatibility classes (deprecated but kept for existing code)
 @dataclass
 class SymmetryOperation:
-    """Represents a 2D symmetry operation"""
+    """Represents a 2D symmetry operation (legacy)"""
     name: str
     matrix: np.ndarray
     type: str  # 'rotation', 'mirror', 'identity'
-    
+
     def __repr__(self):
         return f"SymOp({self.name})"
 
 
 class LayerGroupSymmetry:
-    """Handles 2D layer group symmetry operations"""
-    
-    # Common 2D point group operations
-    OPERATIONS = {
-        'E': np.array([[1, 0], [0, 1]]),  # Identity
-        'C2': np.array([[-1, 0], [0, -1]]),  # 180° rotation
-        'C3': np.array([[-0.5, -np.sqrt(3)/2], [np.sqrt(3)/2, -0.5]]),  # 120° rotation
-        'C4': np.array([[0, -1], [1, 0]]),  # 90° rotation
-        'C6': np.array([[0.5, -np.sqrt(3)/2], [np.sqrt(3)/2, 0.5]]),  # 60° rotation
-        'Mx': np.array([[-1, 0], [0, 1]]),  # Mirror x
-        'My': np.array([[1, 0], [0, -1]]),  # Mirror y
-        'Mxy': np.array([[0, 1], [1, 0]]),  # Mirror along x=y
-        'Mxy-': np.array([[0, -1], [-1, 0]]),  # Mirror along x=-y
-    }
-    
-    # Layer group to point group mapping (simplified, extend as needed)
-    LAYER_GROUP_OPERATIONS = {
-        'p1': ['E'],
-        'p2': ['E', 'C2'],
-        'pm': ['E', 'My'],
-        'pg': ['E', 'My'],  # glide plane
-        'cm': ['E', 'My'],
-        'p2mm': ['E', 'C2', 'Mx', 'My'],
-        'p2mg': ['E', 'C2', 'Mx', 'My'],
-        'p2gg': ['E', 'C2'],
-        'c2mm': ['E', 'C2', 'Mx', 'My'],
-        'p3': ['E', 'C3', 'C3^2'],
-        'p3m1': ['E', 'C3', 'C3^2', 'Mx', 'Mxy', 'Mxy-'],
-        'p31m': ['E', 'C3', 'C3^2', 'My', 'Mxy', 'Mxy-'],
-        'p4': ['E', 'C4', 'C2', 'C4^3'],
-        'p4mm': ['E', 'C4', 'C2', 'C4^3', 'Mx', 'My', 'Mxy', 'Mxy-'],
-        'p-4m2': ['E', 'C4', 'C2', 'C4^3', 'Mx', 'My', 'Mxy', 'Mxy-'],  # Example from MoS2
-        'p6': ['E', 'C6', 'C3', 'C2', 'C3^2', 'C6^5'],
-        'p6mm': ['E', 'C6', 'C3', 'C2', 'C3^2', 'C6^5', 'Mx', 'My', 'Mxy', 'Mxy-'],
-        'p-6m2': ['E', 'C6', 'C3', 'C2', 'C3^2', 'C6^5', 'Mx', 'My', 'Mxy'],  # Common for TMDCs
-    }
-    
+    """Handles 2D layer group symmetry operations (legacy interface)"""
+
+    # Keep old operation names for backwards compatibility
+    OPERATIONS = OPER
+
     def __init__(self, layer_group: str):
         """Initialize with a layer group symbol"""
         self.layer_group = layer_group.lower()
         self.operations = self._generate_operations()
-    
+
     def _generate_operations(self) -> List[SymmetryOperation]:
         """Generate symmetry operations for the layer group"""
         operations = []
-        
-        if self.layer_group not in self.LAYER_GROUP_OPERATIONS:
+
+        if self.layer_group not in LAYER_GROUP_OPERATIONS:
             # Default to p1 if unknown
             print(f"Warning: Unknown layer group '{self.layer_group}', defaulting to p1")
             op_names = ['E']
         else:
-            op_names = self.LAYER_GROUP_OPERATIONS[self.layer_group]
-        
+            op_names = LAYER_GROUP_OPERATIONS[self.layer_group]
+
         for op_name in op_names:
-            if op_name in self.OPERATIONS:
-                matrix = self.OPERATIONS[op_name]
+            if op_name in OPER:
+                matrix = OPER[op_name]
             elif '^' in op_name:
                 # Handle powers like C3^2
                 base, power = op_name.split('^')
-                base_matrix = self.OPERATIONS[base]
+                base_matrix = OPER[base]
                 matrix = np.linalg.matrix_power(base_matrix, int(power))
             else:
                 print(f"Warning: Unknown operation '{op_name}'")
                 continue
-            
+
             # Determine type
             if 'M' in op_name:
                 op_type = 'mirror'
@@ -91,62 +180,55 @@ class LayerGroupSymmetry:
                 op_type = 'identity'
             else:
                 op_type = 'rotation'
-            
+
             operations.append(SymmetryOperation(op_name, matrix, op_type))
-        
+
         return operations
-    
+
     def test_symmetry_preservation(self, tau: np.ndarray, tolerance: float = 1e-6) -> Dict[str, bool]:
         """
         Test if a stacking vector tau preserves each symmetry operation.
-        
+
         The condition is: (E + R)τ = n (integer vector)
-        
+
         Args:
             tau: 2D stacking vector in fractional coordinates [0,1)^2
             tolerance: Numerical tolerance for integer check
-            
+
         Returns:
             Dictionary mapping operation names to preservation status
         """
         results = {}
-        E = np.eye(2)
-        
+
         for op in self.operations:
-            # Calculate (E + R)τ
-            result = (E + op.matrix) @ tau
-            
-            # Check if result is an integer vector
-            is_integer = np.allclose(result, np.round(result), atol=tolerance)
-            results[op.name] = is_integer
-        
+            results[op.name] = survives(op.name, tau, atol=tolerance)
+
         return results
-    
+
     def classify_stacking(self, tau: np.ndarray) -> str:
         """
         Classify a stacking as AA (non-polar) or AB/BA (polar).
-        
+
         Args:
             tau: 2D stacking vector in fractional coordinates
-            
+
         Returns:
             'AA' if all symmetries preserved, 'polar' otherwise
         """
         preserved = self.test_symmetry_preservation(tau)
-        
+
         # AA stacking preserves all symmetries
         if all(preserved.values()):
             return 'AA'
-        
+
         # Check if any mirror or inversion symmetry is broken
         for op in self.operations:
             if op.type in ['mirror', 'inversion'] and not preserved[op.name]:
                 return 'polar'
-        
+
         # If only rotations are broken, might still be non-polar
-        # This is a simplified criterion - adjust based on specific needs
         return 'AA'
-    
+
     def get_broken_symmetries(self, tau: np.ndarray) -> List[str]:
         """Get list of symmetries broken by a stacking"""
         preserved = self.test_symmetry_preservation(tau)

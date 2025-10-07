@@ -225,6 +225,74 @@ class C2DBInterface:
         GROUP BY value
         ORDER BY count DESC
         """
-        
+
         self.cursor.execute(query)
         return self.cursor.fetchall()
+
+
+def fetch_by_uid(uid: str, dbpath: str = "raw/c2db.db") -> Optional[Dict]:
+    """
+    Fetch material info by UID for the new CLI interface.
+
+    Args:
+        uid: C2DB unique identifier (e.g., '4P-1')
+        dbpath: Path to c2db.db file
+
+    Returns:
+        Dictionary with 'uid', 'formula', 'layer_group' keys, or None if not found
+    """
+    import os
+    import sqlite3
+
+    if not os.path.exists(dbpath):
+        return None
+
+    try:
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+
+        # Get system ID from UID
+        cursor.execute("""
+            SELECT id FROM text_key_values
+            WHERE key = 'uid' AND value = ?
+        """, (uid,))
+
+        result = cursor.fetchone()
+        if not result:
+            conn.close()
+            return None
+
+        system_id = result[0]
+
+        # Get layer group
+        cursor.execute("""
+            SELECT value FROM text_key_values
+            WHERE id = ? AND key = 'layergroup'
+        """, (system_id,))
+
+        lg_result = cursor.fetchone()
+        layer_group = lg_result[0] if lg_result else "p1"
+
+        # Extract formula from uid (e.g., '4P-1' -> 'P4')
+        formula = uid.split('-')[0] if '-' in uid else uid
+        # Handle leading digit: '4P' -> 'P4'
+        if formula and formula[0].isdigit():
+            i = 0
+            while i < len(formula) and formula[i].isdigit():
+                i += 1
+            if i < len(formula):
+                count = formula[:i]
+                element = formula[i:]
+                formula = element + count
+
+        conn.close()
+
+        return {
+            "uid": uid,
+            "formula": formula,
+            "layer_group": layer_group
+        }
+
+    except Exception as e:
+        print(f"Error fetching UID {uid}: {e}")
+        return None
