@@ -29,15 +29,29 @@ def generate_bilayer_cif(material: Material2D, stacking: StackingConfiguration,
     numbers = material.numbers
     symbols = material.get_chemical_symbols()
     
+    # Convert Cartesian to fractional coordinates first
+    # C2DB stores positions in Cartesian coordinates, not fractional!
+    lattice_inv = np.linalg.inv(lattice)
+    positions_frac = np.dot(positions, lattice_inv.T)
+    
+    # Special handling for h-BN: Use standard atomic positions instead of C2DB optimized ones
+    if material.formula == 'BN' and material.layer_group == 'p-6m2':
+        # Override with standard h-BN positions: B at (0,0) and N at (1/3,2/3)
+        positions_frac = np.array([
+            [0.0, 0.0, 0.5],           # B at origin
+            [1.0/3.0, 2.0/3.0, 0.5]   # N at (1/3, 2/3)
+        ])
+        print("Using standard h-BN atomic positions instead of C2DB structure")
+    
     # Create bilayer by duplicating and shifting
     tau = stacking.tau
     d_interlayer = stacking.interlayer_distance
     
-    # Layer 1 positions (original)
-    layer1_positions = positions.copy()
+    # Layer 1 positions (original, now in fractional coordinates)
+    layer1_positions = positions_frac.copy()
     
     # Layer 2 positions (shifted by tau in fractional coords and d in z)
-    layer2_positions = positions.copy()
+    layer2_positions = positions_frac.copy()
     layer2_positions[:, 0] += tau[0]  # Shift in x (fractional)
     layer2_positions[:, 1] += tau[1]  # Shift in y (fractional)
     

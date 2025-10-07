@@ -151,3 +151,8 @@ class LayerGroupSymmetry:
         """Get list of symmetries broken by a stacking"""
         preserved = self.test_symmetry_preservation(tau)
         return [op for op, is_preserved in preserved.items() if not is_preserved]
+
+    def get_preserved_symmetries(self, tau: np.ndarray) -> List[str]:
+        """Get list of symmetries preserved by a stacking"""
+        preserved = self.test_symmetry_preservation(tau)
+        return [op for op, is_preserved in preserved.items() if is_preserved]

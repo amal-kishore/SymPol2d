@@ -1,0 +1,33 @@
+# DFT-ready h-BN bilayer structure
+# Generated for DFT calculations with proper vacuum spacing
+# Stacking: BA - tau = [0.6667, 0.3333]
+# Interlayer distance: 3.330 Angstroms
+# Vacuum spacing: ~20 Angstroms
+# Description: BA stacking - Polar (upward, +P)
+# Date: 2025-09-23 17:01:24
+
+data_BA_hBN_DFT
+
+_chemical_name_common     'h-BN BA bilayer for DFT'
+
+_cell_length_a            2.504000
+_cell_length_b            2.504000
+_cell_length_c            25.000000
+_cell_angle_alpha         90.0000
+_cell_angle_beta          90.0000
+_cell_angle_gamma         120.0000
+
+_symmetry_space_group_name_H-M    'P 1'
+_symmetry_Int_Tables_number       1
+
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+B1   B    0.000000   0.000000   0.433400   1.0
+N1   N    0.333333   0.666667   0.433400   1.0
+B2   B    0.666667   0.333333   0.566600   1.0
+N2   N    1.000000   0.000000   0.566600   1.0
