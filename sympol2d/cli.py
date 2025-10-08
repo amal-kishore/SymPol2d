@@ -78,45 +78,38 @@ Examples:
         return 2
 
     # 1) Scan τ-space
-    print(f"Scanning {args.grid}×{args.grid} grid for layer group '{lg}'...")
+    print(f"Scanning {args.grid}×{args.grid} grid ({args.grid**2} points) for layer group '{lg}'...")
     cand = scan_for_z(lg, ngrid=args.grid)
 
     if not cand:
-        payload = {
-            "ok": True,
-            "layer_group": lg,
-            "message": "No z-allowed stackings found."
-        }
-        print(json.dumps(payload, indent=2))
+        print(f"\nNo polar stackings found for layer group '{lg}'")
         return 0
 
-    print(f"Found {len(cand)} z-allowed candidates")
+    print(f"  → Found {len(cand)} stackings with broken inversion symmetry")
 
     # 2) Pick ONE best pair
     tau, tau_ba = pick_best_pair(lg, cand)
 
     if tau is None:
-        payload = {
-            "ok": True,
-            "layer_group": lg,
-            "message": "No candidate pair chosen."
-        }
-        print(json.dumps(payload, indent=2))
+        print(f"\nNo suitable AB/BA pair found")
         return 0
 
     flip = z_sign_flip_expected(lg)
 
-    payload = {
-        "ok": True,
-        "layer_group": lg,
-        "z_sign_flip_expected": flip,
-        "tau_AB": [float(tau[0]), float(tau[1])],
-        "tau_BA": [float(tau_ba[0]), float(tau_ba[1])],
-        "note": ("Opposite Pz under sliding is symmetry-expected; exporting exactly one AB/BA pair."
-                 if flip else
-                 "Opposite Pz under sliding is NOT symmetry-available for this group; see --allow-nonflipping."),
-    }
-    print(json.dumps(payload, indent=2))
+    print(f"\n{'='*60}")
+    print(f"BEST AB/BA STACKING PAIR")
+    print(f"{'='*60}")
+    print(f"Layer group: {lg}")
+    print(f"Formula: {formula}")
+    print(f"\nAB stacking: τ = [{tau[0]:.6f}, {tau[1]:.6f}]")
+    print(f"BA stacking: τ = [{tau_ba[0]:.6f}, {tau_ba[1]:.6f}]")
+    print(f"\nOut-of-plane polarization (Pz):")
+    if flip:
+        print(f"  ✓ AB and BA have opposite Pz (sliding ferroelectric)")
+    else:
+        print(f"  ✗ AB and BA do NOT have opposite Pz")
+        print(f"    (use --allow-nonflipping to export anyway)")
+    print(f"{'='*60}")
 
     # 3) Optional export (POSCARs or CIF) — only when we have monolayer geometry
     if args.export:
