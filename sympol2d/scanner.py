@@ -74,7 +74,7 @@ def distance_to_mirror_lines(t):
 def rational_score(t):
     """
     Score for preferring simple rational fractions.
-    Prioritizes 1/3 and 2/3 (common for hexagonal systems) over other fractions.
+    Prioritizes 1/3 and 2/3 for hexagonal, 1/2 for low-symmetry systems.
 
     Args:
         t: Stacking vector [tau_x, tau_y]
@@ -82,18 +82,31 @@ def rational_score(t):
     Returns:
         Score (lower is better) based on distance to simple fractions
     """
-    # Check for exact matches to 1/3 or 2/3 (priority 0)
-    preferred = np.array([1/3, 2/3])
-    dist_preferred_x = np.min(abs(t[0] - preferred))
-    dist_preferred_y = np.min(abs(t[1] - preferred))
+    # Check for 1/2 shifts first (common for triclinic/monoclinic)
+    half_shifts = np.array([0.0, 0.5, 1.0])
+    dist_half_x = np.min(abs(t[0] - half_shifts))
+    dist_half_y = np.min(abs(t[1] - half_shifts))
 
-    # If both coordinates are 1/3 or 2/3, give lowest score
-    if dist_preferred_x < 0.01 and dist_preferred_y < 0.01:
-        # Prefer diagonal stackings [1/3,2/3] or [2/3,1/3]
-        if abs(t[0] - t[1]) > 0.2:  # Non-diagonal
+    # [0, 0.5], [0.5, 0], [0.5, 0.5] get highest priority
+    if dist_half_x < 0.01 and dist_half_y < 0.01:
+        # Prefer non-diagonal like [0, 0.5]
+        if abs(t[0] - t[1]) > 0.2:
             return 0.0
-        else:  # Diagonal like [1/3,1/3]
+        else:  # [0.5, 0.5]
+            return 0.05
+
+    # Check for 1/3 or 2/3 (hexagonal systems)
+    third_fracs = np.array([1/3, 2/3])
+    dist_third_x = np.min(abs(t[0] - third_fracs))
+    dist_third_y = np.min(abs(t[1] - third_fracs))
+
+    # If both coordinates are 1/3 or 2/3, give second priority
+    if dist_third_x < 0.01 and dist_third_y < 0.01:
+        # Prefer non-diagonal stackings [1/3,2/3] or [2/3,1/3]
+        if abs(t[0] - t[1]) > 0.2:
             return 0.1
+        else:  # Diagonal like [1/3,1/3]
+            return 0.2
 
     # Otherwise use general fractional score
     fracs = np.array([1/2, 1/3, 2/3, 1/4, 3/4, 1/6, 5/6])
