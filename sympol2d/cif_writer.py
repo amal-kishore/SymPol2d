@@ -47,7 +47,6 @@ def generate_bilayer_cif(material: Material2D, stacking: StackingConfiguration,
             [0.0, 0.0, 0.5],           # B at origin
             [1.0/3.0, 2.0/3.0, 0.5]   # N at (1/3, 2/3)
         ])
-        print("Using standard h-BN atomic positions instead of C2DB structure")
 
     # Create bilayer by duplicating and shifting
     tau = stacking.tau
