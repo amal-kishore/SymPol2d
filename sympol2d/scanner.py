@@ -115,7 +115,7 @@ def rational_score(t):
 
 def pick_best_pair(layer_group, candidates, prefer_strict=True):
     """
-    Select exactly ONE best (tau, 1-tau) pair from candidates.
+    Select exactly ONE best (tau, tau_ba) pair from candidates.
 
     Selection criteria (in order):
         1) Prefer 'z-only' tags (mirrors broken, C2 survives)
@@ -128,7 +128,10 @@ def pick_best_pair(layer_group, candidates, prefer_strict=True):
         prefer_strict: If True, prefer "z-only" over "z-allowed"
 
     Returns:
-        (tau, tau_ba): Best AB/BA pair, or (None, None) if no candidates
+        (tau_ab, tau_ba): Best AB/BA pair
+
+        For most layer groups: tau_ba = 1 - tau_ab (inversion pair)
+        For p-1 with special tau: tau_ba = tau_ab + [0, 0.5] (sliding pair)
     """
     cands = candidates
     if prefer_strict:
@@ -144,8 +147,19 @@ def pick_best_pair(layer_group, candidates, prefer_strict=True):
     cands = sorted(cands, key=key)
     if not cands:
         return None, None
-    tau = cands[0]["tau"]
-    return tau, mod1(1.0 - tau)
+
+    tau_ab = cands[0]["tau"]
+    tau_ba = mod1(1.0 - tau_ab)
+
+    # Special handling for p-1: if tau_ab = tau_ba (self-inverse), use sliding pair instead
+    if layer_group == 'p-1' and np.allclose(tau_ab, tau_ba, atol=0.01):
+        # For p-1, use tau_ba = tau_ab + [0, 0.5] (or [0.5, 0] depending on which is non-zero)
+        if abs(tau_ab[1] - 0.5) < 0.01:  # tau_ab = [x, 0.5]
+            tau_ba = mod1(tau_ab + np.array([0.5, 0]))
+        else:  # default: shift in y
+            tau_ba = mod1(tau_ab + np.array([0, 0.5]))
+
+    return tau_ab, tau_ba
 
 
 def z_sign_flip_expected(layer_group):
