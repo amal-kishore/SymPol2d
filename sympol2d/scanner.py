@@ -110,8 +110,8 @@ def pick_best_pair(layer_group, candidates, prefer_strict=True):
 
     def key(c):
         t = c["tau"]
-        # Maximize distance (negate), minimize rational score
-        return (-distance_to_mirror_lines(t), rational_score(t))
+        # Prioritize simple rational fractions first, then maximize distance from mirrors
+        return (rational_score(t), -distance_to_mirror_lines(t))
 
     cands = sorted(cands, key=key)
     if not cands:
