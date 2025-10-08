@@ -14,16 +14,7 @@ from .symmetry import mod1
 from .builder import make_bilayer_poscar
 from .poscar_io import load_poscar
 from . import c2db_interface as c2db
-from dataclasses import dataclass
-from typing import Optional
-
-
-@dataclass
-class StackingConfiguration:
-    """Represents a stacking configuration"""
-    tau: np.ndarray
-    interlayer_distance: float
-    polar_direction: Optional[str] = None
+from .cif_writer import StackingConfiguration, generate_bilayer_cif
 
 
 def main():
@@ -157,9 +148,6 @@ Examples:
                     interlayer_distance=args.gap,
                     polar_direction='z' if flip else None
                 )
-
-                # Import CIF writer
-                from .cif_writer import generate_bilayer_cif
 
                 # Generate CIF files
                 cif_ab = generate_bilayer_cif(material, ab_config, "AB")

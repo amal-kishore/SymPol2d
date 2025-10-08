@@ -6,8 +6,16 @@ import numpy as np
 from typing import List, Dict, Optional
 from pathlib import Path
 from datetime import datetime
+from dataclasses import dataclass
 from .c2db_interface import Material2D
-from .scanner import StackingConfiguration
+
+
+@dataclass
+class StackingConfiguration:
+    """Represents a stacking configuration"""
+    tau: np.ndarray
+    interlayer_distance: float
+    polar_direction: Optional[str] = None
 
 
 def generate_bilayer_cif(material: Material2D, stacking: StackingConfiguration, 
