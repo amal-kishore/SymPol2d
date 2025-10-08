@@ -77,17 +77,10 @@ def generate_bilayer_cif(material: Material2D, stacking: StackingConfiguration,
     layer1_cart[:, 2] = positions_cart[:, 2] - z_min_cart + vacuum_bottom
 
     # Position layer 2 (top layer) above layer 1 with gap
+    # Apply in-plane shift in Cartesian coordinates (rigid translation)
+    tau_cart = lattice[:2, :2].T @ tau  # Convert tau to Cartesian
     layer2_cart = positions_cart.copy()
-    # Apply in-plane shift (in fractional coordinates)
-    layer2_frac_xy = positions_frac[:, :2].copy()
-    layer2_frac_xy[:, 0] += tau[0]
-    layer2_frac_xy[:, 1] += tau[1]
-    layer2_frac_xy = layer2_frac_xy % 1.0
-    # Convert back to Cartesian xy using correct matrix multiplication
-    # Cartesian = lattice.T @ fractional (for column vectors)
-    # For row vectors: Cartesian = fractional @ lattice.T
-    for i in range(len(layer2_cart)):
-        layer2_cart[i, :2] = lattice[:2, :2].T @ layer2_frac_xy[i]
+    layer2_cart[:, :2] = positions_cart[:, :2] + tau_cart  # Rigid shift in xy
     # Shift z so layer starts after gap
     layer2_cart[:, 2] = positions_cart[:, 2] - z_min_cart + vacuum_bottom + mono_thickness + d_interlayer
 
