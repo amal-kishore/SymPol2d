@@ -53,36 +53,53 @@ def generate_bilayer_cif(material: Material2D, stacking: StackingConfiguration,
     tau = stacking.tau
     d_interlayer = stacking.interlayer_distance
 
-    # Calculate monolayer thickness in Cartesian coordinates
-    z_min_frac = positions_frac[:, 2].min()
-    z_max_frac = positions_frac[:, 2].max()
+    # Get monolayer structure in Cartesian coordinates
     c_old = np.linalg.norm(lattice[2])
-    mono_thickness = (z_max_frac - z_min_frac) * c_old
+    positions_cart = positions.copy()  # Already in Cartesian
 
-    # Set up new cell with proper c-axis (2*thickness + gap + vacuum)
-    vacuum = 15.0  # Angstroms of vacuum
-    c_new = 2 * mono_thickness + d_interlayer + vacuum
+    # Calculate monolayer thickness in Cartesian coordinates
+    z_cart = positions_cart[:, 2]
+    z_min_cart = z_cart.min()
+    z_max_cart = z_cart.max()
+    mono_thickness = z_max_cart - z_min_cart
+
+    # Set up new cell with c-axis = 30 Å (standard for 2D materials)
+    c_new = 30.0  # Angstroms
+    total_material = 2 * mono_thickness + d_interlayer
+    total_vacuum = c_new - total_material
+    vacuum_bottom = total_vacuum / 2
+
     new_lattice = lattice.copy()
     new_lattice[2] = lattice[2] * (c_new / c_old)  # Scale c-vector
 
-    # Position layer 1 in lower part of cell (Cartesian coords)
-    z_center1 = vacuum/2 + mono_thickness/2
-    z_shift1 = z_center1 / c_new  # Fractional shift for layer 1
-    layer1_positions = positions_frac.copy()
-    # Re-center around z_shift1
-    layer1_positions[:, 2] = (positions_frac[:, 2] - 0.5) + z_shift1
+    # Position layer 1 (bottom layer) - keep Cartesian positions relative to layer
+    layer1_cart = positions_cart.copy()
+    # Shift so layer starts at vacuum_bottom
+    layer1_cart[:, 2] = positions_cart[:, 2] - z_min_cart + vacuum_bottom
 
-    # Position layer 2 above layer 1 with gap
-    z_center2 = z_center1 + mono_thickness + d_interlayer
-    z_shift2 = z_center2 / c_new  # Fractional shift for layer 2
-    layer2_positions = positions_frac.copy()
-    layer2_positions[:, 0] += tau[0]  # Shift in x (fractional)
-    layer2_positions[:, 1] += tau[1]  # Shift in y (fractional)
-    # Re-center around z_shift2
-    layer2_positions[:, 2] = (positions_frac[:, 2] - 0.5) + z_shift2
+    # Position layer 2 (top layer) above layer 1 with gap
+    layer2_cart = positions_cart.copy()
+    # Apply in-plane shift (in fractional coordinates)
+    layer2_frac_xy = positions_frac[:, :2].copy()
+    layer2_frac_xy[:, 0] += tau[0]
+    layer2_frac_xy[:, 1] += tau[1]
+    layer2_frac_xy = layer2_frac_xy % 1.0
+    # Convert back to Cartesian xy using correct matrix multiplication
+    # Cartesian = lattice.T @ fractional (for column vectors)
+    # For row vectors: Cartesian = fractional @ lattice.T
+    for i in range(len(layer2_cart)):
+        layer2_cart[i, :2] = lattice[:2, :2].T @ layer2_frac_xy[i]
+    # Shift z so layer starts after gap
+    layer2_cart[:, 2] = positions_cart[:, 2] - z_min_cart + vacuum_bottom + mono_thickness + d_interlayer
 
-    # Wrap xy fractional coordinates to [0, 1)
-    layer2_positions[:, :2] = layer2_positions[:, :2] % 1.0
+    # Convert to fractional coordinates in new cell
+    # Fractional = lattice_inv.T @ Cartesian (for column vectors)
+    new_lattice_inv = np.linalg.inv(new_lattice)
+    layer1_positions = np.zeros_like(layer1_cart)
+    layer2_positions = np.zeros_like(layer2_cart)
+    for i in range(len(layer1_cart)):
+        layer1_positions[i] = new_lattice_inv.T @ layer1_cart[i]
+        layer2_positions[i] = new_lattice_inv.T @ layer2_cart[i]
 
     # Combine both layers
     all_positions = np.vstack([layer1_positions, layer2_positions])

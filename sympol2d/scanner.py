@@ -74,6 +74,7 @@ def distance_to_mirror_lines(t):
 def rational_score(t):
     """
     Score for preferring simple rational fractions.
+    Prioritizes 1/3 and 2/3 (common for hexagonal systems) over other fractions.
 
     Args:
         t: Stacking vector [tau_x, tau_y]
@@ -81,8 +82,22 @@ def rational_score(t):
     Returns:
         Score (lower is better) based on distance to simple fractions
     """
+    # Check for exact matches to 1/3 or 2/3 (priority 0)
+    preferred = np.array([1/3, 2/3])
+    dist_preferred_x = np.min(abs(t[0] - preferred))
+    dist_preferred_y = np.min(abs(t[1] - preferred))
+
+    # If both coordinates are 1/3 or 2/3, give lowest score
+    if dist_preferred_x < 0.01 and dist_preferred_y < 0.01:
+        # Prefer diagonal stackings [1/3,2/3] or [2/3,1/3]
+        if abs(t[0] - t[1]) > 0.2:  # Non-diagonal
+            return 0.0
+        else:  # Diagonal like [1/3,1/3]
+            return 0.1
+
+    # Otherwise use general fractional score
     fracs = np.array([1/2, 1/3, 2/3, 1/4, 3/4, 1/6, 5/6])
-    return np.min(abs(t[0]-fracs)) + np.min(abs(t[1]-fracs))
+    return 1.0 + np.min(abs(t[0]-fracs)) + np.min(abs(t[1]-fracs))
 
 
 def pick_best_pair(layer_group, candidates, prefer_strict=True):
