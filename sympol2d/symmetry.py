@@ -44,6 +44,7 @@ LAYER_GROUP_OPERATIONS = {
 
     # Single-axis symmetry
     'p1': ['E'],
+    'p-1': ['E', 'C2'],  # Triclinic with inversion (C2 = inversion in 2D)
     'p2': ['E', 'C2'],
     'pm': ['E', 'My'],
     'pg': ['E', 'My'],
@@ -79,6 +80,9 @@ Z_SIGN_FLIP_EXPECTED = {
     'p-6m2': True, 'p6mm': True, 'p3m1': True, 'p31m': True,
     'p-3m1': True, 'p-31m': True, 'p-6': True, 'p6': True,
     'p3': True, 'p-3': True,
+
+    # Triclinic with inversion: AB↔BA related by inversion → Pz flips
+    'p-1': True,
 
     # Rectangular: AB↔BA related by C2z (z-even) → Pz does NOT flip
     'p2mm': False, 'pman': False, 'pmmm': False, 'cmmm': False,
