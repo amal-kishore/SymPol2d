@@ -74,7 +74,7 @@ def distance_to_mirror_lines(t):
 def rational_score(t):
     """
     Score for preferring simple rational fractions.
-    Prioritizes 1/3 and 2/3 for hexagonal, 1/2 for low-symmetry systems.
+    Prioritizes 1/3 and 2/3 (most common for 2D materials).
 
     Args:
         t: Stacking vector [tau_x, tau_y]
@@ -82,31 +82,26 @@ def rational_score(t):
     Returns:
         Score (lower is better) based on distance to simple fractions
     """
-    # Check for 1/2 shifts first (common for triclinic/monoclinic)
-    half_shifts = np.array([0.0, 0.5, 1.0])
-    dist_half_x = np.min(abs(t[0] - half_shifts))
-    dist_half_y = np.min(abs(t[1] - half_shifts))
-
-    # [0, 0.5], [0.5, 0], [0.5, 0.5] get highest priority
-    if dist_half_x < 0.01 and dist_half_y < 0.01:
-        # Prefer non-diagonal like [0, 0.5]
-        if abs(t[0] - t[1]) > 0.2:
-            return 0.0
-        else:  # [0.5, 0.5]
-            return 0.05
-
-    # Check for 1/3 or 2/3 (hexagonal systems)
+    # Check for 1/3 or 2/3 (most common for 2D materials)
     third_fracs = np.array([1/3, 2/3])
     dist_third_x = np.min(abs(t[0] - third_fracs))
     dist_third_y = np.min(abs(t[1] - third_fracs))
 
-    # If both coordinates are 1/3 or 2/3, give second priority
+    # If both coordinates are 1/3 or 2/3, give highest priority
     if dist_third_x < 0.01 and dist_third_y < 0.01:
-        # Prefer non-diagonal stackings [1/3,2/3] or [2/3,1/3]
-        if abs(t[0] - t[1]) > 0.2:
+        # Prefer diagonal stackings [1/3,1/3] or [2/3,2/3] (score 0.0)
+        if abs(abs(t[0] - t[1])) < 0.01:  # Diagonal
+            return 0.0
+        else:  # Non-diagonal like [1/3,2/3]
             return 0.1
-        else:  # Diagonal like [1/3,1/3]
-            return 0.2
+
+    # Check for 1/2 shifts (less common but still important)
+    half_shifts = np.array([0.0, 0.5, 1.0])
+    dist_half_x = np.min(abs(t[0] - half_shifts))
+    dist_half_y = np.min(abs(t[1] - half_shifts))
+
+    if dist_half_x < 0.01 and dist_half_y < 0.01:
+        return 0.2
 
     # Otherwise use general fractional score
     fracs = np.array([1/2, 1/3, 2/3, 1/4, 3/4, 1/6, 5/6])
@@ -121,6 +116,7 @@ def pick_best_pair(layer_group, candidates, prefer_strict=True):
         1) Prefer 'z-only' tags (mirrors broken, C2 survives)
         2) Maximize distance from mirror lines
         3) Prefer simple rational fractions
+        4) Skip self-inverse tau (where tau_ba = tau_ab)
 
     Args:
         layer_group: Layer group symbol
@@ -131,13 +127,20 @@ def pick_best_pair(layer_group, candidates, prefer_strict=True):
         (tau_ab, tau_ba): Best AB/BA pair
 
         For most layer groups: tau_ba = 1 - tau_ab (inversion pair)
-        For p-1 with special tau: tau_ba = tau_ab + [0, 0.5] (sliding pair)
     """
     cands = candidates
     if prefer_strict:
         strict = [c for c in cands if c["tag"] == "z-only"]
         if strict:
             cands = strict
+
+    # Filter out self-inverse tau (where 1-tau ≈ tau)
+    def is_self_inverse(tau, atol=1e-3):
+        """Check if tau is self-inverse: mod1(1-tau) ≈ tau"""
+        tau_inv = mod1(1.0 - tau)
+        return np.allclose(tau_inv, tau, atol=atol)
+
+    cands = [c for c in cands if not is_self_inverse(c["tau"])]
 
     def key(c):
         t = c["tau"]
@@ -150,14 +153,6 @@ def pick_best_pair(layer_group, candidates, prefer_strict=True):
 
     tau_ab = cands[0]["tau"]
     tau_ba = mod1(1.0 - tau_ab)
-
-    # Special handling for p-1: if tau_ab = tau_ba (self-inverse), use sliding pair instead
-    if layer_group == 'p-1' and np.allclose(tau_ab, tau_ba, atol=0.01):
-        # For p-1, use tau_ba = tau_ab + [0, 0.5] (or [0.5, 0] depending on which is non-zero)
-        if abs(tau_ab[1] - 0.5) < 0.01:  # tau_ab = [x, 0.5]
-            tau_ba = mod1(tau_ab + np.array([0.5, 0]))
-        else:  # default: shift in y
-            tau_ba = mod1(tau_ab + np.array([0, 0.5]))
 
     return tau_ab, tau_ba
 
