@@ -16,17 +16,17 @@ A Python tool for identifying polar and non-polar stacking configurations in 2D 
 ## Quick Start
 
 ```bash
-# Search for WS2 stacking configurations
-python3 run_2dsympol.py search --uid 1WS2-1
+# Search for MoS2 stacking configurations and export CIF files
+python3 run_sympol2d.py search --uid 1MoS2-1 --grid 30 --database raw/c2db.db --export
 
-# Search by chemical formula
-python3 run_2dsympol.py search --formula MoS2 --auto-select
+# Custom interlayer gap
+python3 run_sympol2d.py search --uid 1MoS2-1 --gap 3.2 --export --database raw/c2db.db
 
-# Find only z-polarized stackings with custom grid
-python3 run_2dsympol.py search --uid 1WS2-1 --polar-direction z --grid 60
+# Export with custom output location
+python3 run_sympol2d.py search --uid 1MoS2-1 --export --out-prefix example/MoS2/mos2 --database raw/c2db.db
 
-# List available materials
-python3 run_2dsympol.py list --formula WS2
+# Using POSCAR format for VASP
+python3 run_sympol2d.py search --layer-group p-6m2 --poscar POSCAR_mono --export --format poscar
 ```
 
 ## Installation
@@ -34,16 +34,17 @@ python3 run_2dsympol.py list --formula WS2
 1. Clone the repository
 2. Install dependencies: `numpy`, `sqlite3`
 3. Obtain the c2db database file (`c2db.db`) separately from c2db maintainers
-4. Place `c2db.db` in the project root directory
+4. Place `c2db.db` in the `raw/` directory (or specify custom path with `--database`)
 
 ## Mathematical Framework
 
-Tests symmetry preservation using: `(E + R)τ = n` where R is a symmetry operation, τ is the stacking vector, and n is an integer. Stackings that break inversion/mirror symmetries are classified as polar.
+Tests symmetry preservation using: `(E + R)τ = n` where R is a symmetry operation, τ is the stacking vector, and n is an integer. Stackings that break inversion symmetry are identified as polar.
 
-For WS2, 2dSYMPOL identifies:
-- **AA stacking**: τ = [0.000, 0.000] (non-polar)
-- **AB stacking**: τ = [0.333, 0.333] (z-polar)
-- **BA stacking**: τ = [0.667, 0.667] (z-polar, opposite to AB)
+For sliding ferroelectrics, 2dSYMPOL finds AB/BA pairs where:
+- **AB stacking**: τ ≈ [0.333, 0.333] (e.g., for TMDCs)
+- **BA stacking**: τ ≈ [0.667, 0.667] (related by inversion)
+- AB and BA have opposite out-of-plane polarization (Pz)
+- Sliding between AB and BA switches the polarization direction
 
 ## Applications
 

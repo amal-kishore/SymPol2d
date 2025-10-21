@@ -60,88 +60,86 @@ The polarization in 2D bilayers arises from breaking of inversion symmetry durin
 
 4. **Test installation**:
    ```bash
-   python3 run_2dsympol.py --help
+   python3 run_sympol2d.py --help
    ```
 
 ### Directory Structure
 
 ```
 slipmat/
-├── run_2dsympol.py          # Main executable script
+├── run_sympol2d.py         # Main executable script
 ├── sympol2d/               # Core package
 │   ├── __init__.py
 │   ├── cli.py              # Command-line interface
 │   ├── symmetry.py         # Symmetry operations
 │   ├── scanner.py          # Grid scanning logic
 │   ├── c2db_interface.py   # Database interface
-│   └── utils.py            # Utility functions
-├── c2db.db                 # c2db materials database
+│   ├── builder.py          # Bilayer structure builder
+│   ├── cif_writer.py       # CIF file generator
+│   └── poscar_io.py        # POSCAR file I/O
+├── raw/
+│   └── c2db.db             # c2db materials database
 ├── example/                # Example calculations
-│   └── WS2/               # WS2 example with CIF files
+│   ├── MoS2/              # MoS2 example
+│   ├── ReS2/              # ReS2 example
+│   ├── hBN/               # hBN example
+│   └── WS2/               # WS2 example
 ├── README.md              # Quick start guide
 └── MANUAL.md              # This file
 ```
 
 ## Command Line Interface
 
-2dSYMPOL provides two main commands: `search` and `list`.
+2dSYMPOL provides the `search` command to find polar AB/BA stacking pairs for sliding ferroelectrics.
 
 ### Search Command
 
-Find polar stackings for a specific material:
+Find the best AB/BA stacking pair for out-of-plane sliding ferroelectricity:
 
 ```bash
-python3 run_2dsympol.py search [options]
+python3 run_sympol2d.py search [options]
 ```
 
-**Required arguments** (one of):
-- `--uid UID`: c2db material identifier (e.g., `1WS2-1`)
-- `--formula FORMULA`: Chemical formula (e.g., `MoS2`)
+**Material selection** (choose one):
+- `--uid UID`: c2db material identifier (e.g., `1MoS2-1`)
+- `--layer-group GROUP`: Layer group symmetry (e.g., `p-6m2`, `p6mm`, `p2mm`, `pman`)
 
-**Optional arguments**:
-- `--grid SIZE`: Grid density (default: 50, range: 10-100)
-- `--polar-direction DIR`: Filter by direction (`x`, `y`, `z`, `xy`, `general`, `all`)
-- `--interlayer-distance DIST`: Interlayer separation in Å (default: auto-estimate)
-- `--output FILE`: Save results to JSON file
-- `--auto-select`: Auto-select first match when multiple materials found
+**Grid scanning**:
+- `--grid SIZE`: Grid resolution for tau-space scanning (default: 60)
 
-### List Command
+**Structure export**:
+- `--export`: Export bilayer structures (requires `--uid` for CIF or `--poscar` for VASP)
+- `--format {cif,poscar}`: Export format (default: `cif`)
+- `--out-prefix PREFIX`: Output file prefix (default: `sympol2d`)
 
-Browse available materials:
+**Structure parameters**:
+- `--gap DIST`: Interlayer gap in Angstroms (default: 3.1)
+- `--poscar FILE`: Monolayer POSCAR file (for VASP format export)
+- `--database PATH`: Path to c2db database (default: `raw/c2db.db`)
 
-```bash
-python3 run_2dsympol.py list [options]
-```
-
-**Options**:
-- `--formula FORMULA`: Filter by chemical formula
-- `--layer-group GROUP`: Filter by layer group symmetry
-- `--layer-groups`: Show all available layer groups
-- `--limit N`: Maximum results to display (default: 20)
+**Advanced options**:
+- `--allow-nonflipping`: Export even if AB/BA don't have opposite Pz
 
 ### Examples of Common Usage
 
 ```bash
-# Basic search by material ID
-python3 run_2dsympol.py search --uid 1WS2-1
+# Basic search with CIF export from c2db
+python3 run_sympol2d.py search --uid 1MoS2-1 --grid 30 --database raw/c2db.db --export
 
-# Search by formula with auto-selection
-python3 run_2dsympol.py search --formula MoS2 --auto-select
+# Custom interlayer gap
+python3 run_sympol2d.py search --uid 1MoS2-1 --gap 3.2 --export --database raw/c2db.db
 
-# High-resolution scan for z-polar stackings
-python3 run_2dsympol.py search --uid 1WS2-1 --grid 80 --polar-direction z
+# Export with custom output prefix
+python3 run_sympol2d.py search --uid 1MoS2-1 --grid 60 --export --out-prefix mos2/mos2
 
-# Custom interlayer distance
-python3 run_2dsympol.py search --uid 1WS2-1 --interlayer-distance 3.5
+# Using monolayer POSCAR for VASP format
+python3 run_sympol2d.py search --layer-group p-6m2 --poscar POSCAR_mono --gap 3.1 --export --format poscar
 
-# Save detailed results
-python3 run_2dsympol.py search --uid 1WS2-1 --output ws2_results.json
+# Rectangular system (no Pz flip expected)
+python3 run_sympol2d.py search --layer-group pman --poscar BP_mono.vasp --export --allow-nonflipping --format poscar
 
-# Browse materials by composition
-python3 run_2dsympol.py list --formula WS2
-
-# Show all available layer groups
-python3 run_2dsympol.py list --layer-groups
+# Quick search without export
+python3 run_sympol2d.py search --uid 1WS2-1 --grid 30 --database raw/c2db.db
 ```
 
 ## Methodology
@@ -197,112 +195,110 @@ Where:
 
 ## Examples
 
-### Example 1: WS2 Analysis
+### Example 1: MoS2 Analysis with CIF Export
 
-WS2 (tungsten disulfide) is a prototypical transition metal dichalcogenide with layer group p-6m2.
+MoS2 (molybdenum disulfide) is a prototypical transition metal dichalcogenide with layer group p-6m2.
 
 ```bash
-python3 run_2dsympol.py search --uid 1WS2-1 --grid 50
+python3 run_sympol2d.py search --uid 1MoS2-1 --grid 30 --database raw/c2db.db --export
 ```
 
 **Expected output**:
 ```
-Analyzing: WS2 (1WS2-1)
+Scanning 30×30 grid (900 points) for layer group 'p-6m2'...
+  → Found 126 stackings with broken inversion symmetry
+
+============================================================
+BEST AB/BA STACKING PAIR
+============================================================
 Layer group: p-6m2
-Number of atoms: 3
-Auto-estimated interlayer distance: 3.10 Å
+Formula: MoS2
 
-Scanning 50x50 grid for stacking configurations...
+AB stacking: τ = [0.333333, 0.333333]
+BA stacking: τ = [0.666667, 0.666667]
 
+Out-of-plane polarization (Pz):
+  ✓ AB and BA have opposite Pz (sliding ferroelectric)
 ============================================================
-STACKING CONFIGURATIONS FOUND:
-============================================================
 
-AA stacking (non-polar):
-  τ = [0.0000, 0.0000], d = 3.10 Å
-  Preserved symmetries: E, C6, C3, C2, C3^2, C6^5, Mx, My, Mxy
+Extracting structure from c2db database...
+Loaded: MoS2 (p-6m2), 3 atoms
 
-Z-POLARIZED PAIRS (392 found):
-
-  Pair 1:
-    AB: τ = [0.3333, 0.3333]
-    BA: τ = [0.6667, 0.6667]
-    Broken symmetries: Mx, My, Mxy
+Exported bilayer CIF structures:
+  AB: sympol2d_AB.cif
+  BA: sympol2d_BA.cif
 ```
 
 **Analysis**:
-- WS2 shows strong z-polarization (out-of-plane)
+- MoS2 shows out-of-plane polarization (sliding ferroelectric)
 - Standard AB/BA stackings at τ = [1/3, 1/3] and [2/3, 2/3]
 - These correspond to standard 2H-type stacking in TMDCs
-- 392 total z-polar pairs found, but high-symmetry ones prioritized
+- CIF files can be visualized in VESTA, Materials Studio, or similar tools
 
-### Example 2: MoS2 Comparison
-
-```bash
-python3 run_2dsympol.py search --formula MoS2 --auto-select --polar-direction z
-```
-
-MoS2 should show similar behavior to WS2 due to identical layer group symmetry.
-
-### Example 3: Square Lattice Material
+### Example 2: Custom Output Location
 
 ```bash
-python3 run_2dsympol.py search --formula <square-lattice-material> --polar-direction all
+python3 run_sympol2d.py search --uid 1WS2-1 --grid 60 --export --out-prefix example/WS2/ws2 --database raw/c2db.db
 ```
 
-Square lattice materials (layer group p-4m2) typically show:
-- x-polar and y-polar pairs
-- z-polar configurations
-- Different symmetry breaking patterns than hexagonal systems
+This will create `example/WS2/ws2_AB.cif` and `example/WS2/ws2_BA.cif`.
+
+### Example 3: POSCAR Format Export
+
+For VASP calculations, you can export in POSCAR format if you have the monolayer structure:
+
+```bash
+python3 run_sympol2d.py search --layer-group p-6m2 --poscar POSCAR_mono --gap 3.1 --export --format poscar --out-prefix bilayer
+```
+
+This will create `bilayer_AB.vasp` and `bilayer_BA.vasp`.
 
 ## Understanding Results
 
 ### Output Interpretation
 
-1. **Material Information**:
-   - UID: Unique identifier in c2db
-   - Formula: Chemical composition
-   - Layer group: Crystallographic symmetry
-   - Atom count: Number of atoms in unit cell
+1. **Grid Scanning Results**:
+   - Number of grid points: N×N where N is your `--grid` value
+   - Number of stackings found: Configurations that break inversion symmetry
 
-2. **Scanning Parameters**:
-   - Grid size: Density of stacking vector sampling
-   - Interlayer distance: Vertical separation between layers
+2. **Best AB/BA Pair**:
+   - **Layer group**: Crystallographic symmetry of the monolayer
+   - **Formula**: Chemical composition
+   - **AB stacking**: τ vector for AB configuration
+   - **BA stacking**: τ vector for BA configuration (typically related to AB by inversion)
 
-3. **AA Stacking**:
-   - Always shown first
-   - τ ≈ [0, 0] for most materials
-   - Lists all preserved symmetries
+3. **Polarization Check**:
+   - **✓ AB and BA have opposite Pz**: Material is a sliding ferroelectric
+   - **✗ AB and BA do NOT have opposite Pz**: Not a sliding ferroelectric (some layer groups)
 
-4. **Polar Pairs**:
-   - Grouped by polarization direction
-   - Ordered by symmetry importance
-   - Shows number of pairs found
-   - AB/BA relationship explicitly shown
+4. **Exported Files**:
+   - CIF format: `{prefix}_AB.cif` and `{prefix}_BA.cif`
+   - POSCAR format: `{prefix}_AB.vasp` and `{prefix}_BA.vasp`
 
 ### Quality Indicators
 
 **High-quality results**:
 - AB/BA pairs at simple fractions (1/3, 1/2, 2/3)
-- Clear symmetry breaking patterns
-- Reasonable number of pairs (not too many/few)
+- Clear message about Pz flipping
+- Reasonable number of candidate stackings (10-1000)
 
 **Potential issues**:
-- τ values very close to grid artifacts (e.g., 0.02, 0.98)
-- Thousands of polar pairs (may indicate numerical issues)
-- No polar pairs found (check layer group compatibility)
+- τ values very close to grid artifacts (e.g., 0.02, 0.98) - try higher grid resolution
+- Very few stackings (<5) - may need higher grid resolution
+- Thousands of stackings (>2000) - may indicate numerical issues
 
 ### Physical Interpretation
 
 **AB vs BA stackings**:
-- AB: Often corresponds to "chalcogen over metal" in TMDCs
-- BA: Opposite arrangement with inverted polarization
-- Magnitude depends on atomic charges and positions
+- AB: One specific lateral stacking arrangement
+- BA: Related by inversion symmetry: τ_BA ≈ 1 - τ_AB (modulo 1)
+- For TMDCs: Often corresponds to "chalcogen over metal" vs "metal over chalcogen"
+- Sliding between AB and BA flips the out-of-plane polarization
 
-**Polarization directions**:
-- **z-polar**: Most common in van der Waals materials
-- **x/y-polar**: Often seen in materials with rectangular unit cells
-- **xy-polar**: Diagonal polarization, less common
+**Out-of-plane polarization (Pz)**:
+- Most common in van der Waals materials with broken inversion symmetry
+- AB and BA states have opposite Pz → sliding ferroelectric
+- Useful for non-volatile memory, sensors, and energy harvesting devices
 
 ## Advanced Usage
 
@@ -312,31 +308,34 @@ For high-precision work, increase grid density:
 
 ```bash
 # Ultra-high resolution (10,000 points)
-python3 run_2dsympol.py search --uid 1WS2-1 --grid 100
+python3 run_sympol2d.py search --uid 1MoS2-1 --grid 100 --database raw/c2db.db
 
 # Quick screening (100 points)
-python3 run_2dsympol.py search --uid 1WS2-1 --grid 10
+python3 run_sympol2d.py search --uid 1MoS2-1 --grid 10 --database raw/c2db.db
+
+# Standard (default: 60×60 = 3600 points)
+python3 run_sympol2d.py search --uid 1MoS2-1 --database raw/c2db.db
 ```
 
 **Grid density guidelines**:
 - Grid 10-20: Quick screening, may miss fine features
-- Grid 30-50: Standard analysis, good balance
-- Grid 60-100: High precision, computational cost increases
+- Grid 30-60: Standard analysis, good balance (default: 60)
+- Grid 70-100: High precision, computational cost increases
 
-### Interlayer Distance Effects
+### Interlayer Gap Effects
 
 ```bash
-# van der Waals materials
-python3 run_2dsympol.py search --uid 1WS2-1 --interlayer-distance 3.1
+# Standard van der Waals gap
+python3 run_sympol2d.py search --uid 1WS2-1 --gap 3.1 --export --database raw/c2db.db
 
 # Compressed bilayers
-python3 run_2dsympol.py search --uid 1WS2-1 --interlayer-distance 2.5
+python3 run_sympol2d.py search --uid 1WS2-1 --gap 2.5 --export --database raw/c2db.db
 
 # Expanded interlayers
-python3 run_2dsympol.py search --uid 1WS2-1 --interlayer-distance 4.0
+python3 run_sympol2d.py search --uid 1WS2-1 --gap 4.0 --export --database raw/c2db.db
 ```
 
-Note: Interlayer distance affects the classification for structure generation but not the symmetry-based polar analysis.
+Note: The `--gap` parameter only affects the exported structure geometry, not the symmetry-based analysis.
 
 ### Batch Processing
 
@@ -346,75 +345,64 @@ For systematic studies, create bash scripts:
 #!/bin/bash
 # batch_analysis.sh
 
-materials=("1WS2-1" "1MoS2-3" "1WSe2-1")
+materials=("1MoS2-1" "1WS2-1" "1WSe2-1")
 for mat in "${materials[@]}"; do
     echo "Processing $mat..."
-    python3 run_2dsympol.py search --uid "$mat" --output "${mat}_results.json"
+    python3 run_sympol2d.py search --uid "$mat" --grid 30 \
+        --export --out-prefix "results/${mat}/${mat}" \
+        --database raw/c2db.db
 done
 ```
 
-### JSON Output Analysis
-
-Results can be saved in JSON format for further analysis:
-
-```bash
-python3 run_2dsympol.py search --uid 1WS2-1 --output results.json
+This will create directory structure:
 ```
-
-JSON structure:
-```json
-{
-  "material": {
-    "uid": "1WS2-1",
-    "formula": "WS2",
-    "layer_group": "p-6m2"
-  },
-  "grid_size": 50,
-  "stackings": {
-    "AA": {
-      "tau": [0.0, 0.0],
-      "preserved_symmetries": ["E", "C6", ...],
-      "broken_symmetries": []
-    },
-    "AB": {
-      "tau": [0.3333, 0.3333],
-      "preserved_symmetries": ["E", "C6", ...],
-      "broken_symmetries": ["Mx", "My", ...]
-    }
-  }
-}
+results/
+├── 1MoS2-1/
+│   ├── 1MoS2-1_AB.cif
+│   └── 1MoS2-1_BA.cif
+├── 1WS2-1/
+│   ├── 1WS2-1_AB.cif
+│   └── 1WS2-1_BA.cif
+└── 1WSe2-1/
+    ├── 1WSe2-1_AB.cif
+    └── 1WSe2-1_BA.cif
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-**1. "Material not found in database"**
+**1. "Database file not found"**
 ```bash
-# Check if UID exists
-python3 run_2dsympol.py list --formula WS2
+# Verify database location (default path)
+ls -la raw/c2db.db
 
-# Use exact UID from list output
-python3 run_2dsympol.py search --uid 1WS2-1
-```
-
-**2. "No polar pairs found"**
-- Check layer group compatibility
-- Some materials may only have AA stackings
-- Try increasing grid size: `--grid 80`
-
-**3. "Too many polar pairs (>1000)"**
-- May indicate numerical precision issues
-- Try smaller grid size: `--grid 30`
-- Check if material has unusual symmetry
-
-**4. "Database file not found"**
-```bash
-# Verify database location
-ls -la c2db.db
+# Or specify custom path
+python3 run_sympol2d.py search --uid 1MoS2-1 --database /path/to/c2db.db
 
 # Check file permissions
-chmod 644 c2db.db
+chmod 644 raw/c2db.db
+```
+
+**2. "No suitable AB/BA pair found"**
+- Some layer groups may not have inversion-breaking stackings
+- Try increasing grid resolution: `--grid 80`
+- Check if the layer group is compatible with sliding ferroelectricity
+
+**3. "CIF export requires --uid"**
+- CIF export needs the c2db database to extract atomic structure
+- Either provide `--uid` with `--database`, or use POSCAR format instead:
+```bash
+python3 run_sympol2d.py search --layer-group p-6m2 --poscar POSCAR_mono --format poscar --export
+```
+
+**4. "POSCAR file not found"**
+```bash
+# Verify POSCAR exists
+ls -la POSCAR_mono
+
+# Use absolute or relative path
+python3 run_sympol2d.py search --layer-group p-6m2 --poscar /full/path/to/POSCAR_mono --export --format poscar
 ```
 
 **5. ImportError or module issues**
@@ -424,18 +412,26 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
 # Check dependencies
 python3 -c "import numpy; print('NumPy OK')"
+
+# Or run directly as module
+python3 -m sympol2d.cli search --uid 1MoS2-1 --database raw/c2db.db
 ```
+
+**6. "provide --layer-group or a valid --uid"**
+- You must specify either `--uid` (with database) OR `--layer-group`
+- With `--uid`, layer group is automatically determined from database
+- Without database, you must manually specify `--layer-group`
 
 ### Performance Optimization
 
 **Memory usage**:
-- Large grids (>80) require significant RAM
-- Consider smaller grids for batch processing
+- Large grids (>80) require more RAM
+- Consider smaller grids (30-60) for batch processing
 
 **Speed optimization**:
-- Use `--polar-direction z` if only out-of-plane polarization needed
-- Smaller grids complete faster
-- JSON output adds minimal overhead
+- Smaller grids complete faster (grid 30 vs grid 100)
+- CIF export is fast (direct from database)
+- POSCAR export requires monolayer file reading
 
 ### Getting Help
 
