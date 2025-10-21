@@ -12,8 +12,8 @@
 
 **Setup**:
 ```bash
-git clone <repository-url>
-cd slipmat
+git clone https://github.com/amal-kishore/SymPol2d.git
+cd SymPol2d
 python3 -c "import numpy, sqlite3; print('OK')"
 ```
 
